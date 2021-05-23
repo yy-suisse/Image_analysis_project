@@ -51,10 +51,10 @@ def players_clustering(mask):
     img2 = np.zeros_like(tmp)
     points = []
 
-    minLineLength = 400
+    minLineLength = 400 #400
     maxLineGap = 150
     lines = cv2.HoughLinesP(img,1,np.pi/180,100,minLineLength=minLineLength,maxLineGap=maxLineGap )
-    print(np.shape(lines))
+    #print(np.shape(lines))
     for line in lines:
         for x1,y1,x2,y2 in line:
             #print(x1,y1,x2,y2)
@@ -80,18 +80,21 @@ def players_clustering(mask):
         
     centers=[]
     for i in range (4):
-        #print(np.mean(players[i],axis = 0))
-        #print(players[i])
         center = np.mean(players[i],axis = 0)
-        print(center)
+        #print(center)
         centers.append(np.mean(players[i],axis = 0))
-        plt.imshow(mask)
-        plt.scatter(points_f[:, 0], points_f[:, 1], c=kmeans.labels_.ravel(), s=10, lw=0, cmap='RdYlGn')
-        plt.scatter(center[0], center[1],s=10, lw=0, cmap='RdYlGn')
-    return players,centers
-   
+        #plt.imshow(mask)
+        #plt.scatter(points_f[:, 0], points_f[:, 1], c=kmeans.labels_.ravel(), s=10, lw=0, cmap='RdYlGn')
+        #plt.scatter(center[0], center[1],s=10, lw=0, cmap='RdYlGn')
+        #plt.show()
+    return players,centers,points_f,kmeans.labels_.ravel()
+"""    
 def find_corners(players,centers,image):
     isolated_cards = []
+    left_lowers = []
+    left_uppers = []
+    right_lowers = []
+    right_uppers = []
     for i in range(4):
 
         if centers[i][0] <= 1152 and centers[i][1] >= 1536 and centers[i][1] <= 3072:
@@ -111,6 +114,7 @@ def find_corners(players,centers,image):
 
         y_min = 5000
         y_max = 0
+ 
         for coords in players[i]:
             if coords[1]>y_max and (coords[0]<centers[i][0] and coords[1]> centers[i][1]): # left lower
                 y_max = coords[1]
@@ -140,7 +144,12 @@ def find_corners(players,centers,image):
             if coords[1]<y_min and (coords[0]>centers[i][0] and coords[1]<centers[i][1]): # right upper
                 y_max = coords[1]
                 right_upper = coords
-                
+        
+
+        left_lowers.append(left_lower)
+        #left_uppers.append()
+        right_lowers.append(right_lower)
+        right_uppers.append(right_upper)
         
         print("left lower:",left_lower)
         print("left upper:",left_upper)
@@ -149,7 +158,113 @@ def find_corners(players,centers,image):
 
         isolated = affin_transform(player,left_lower,right_lower,right_upper,image)
         isolated_cards.append(isolated)
-    return isolated_cards
+
+    return isolated_cards,left_lowers,right_lowers,right_uppers 
+"""
+"""
+def players_clustering(mask):
+    seeds_kmean=np.array([[2000,3800],[3000,2200],[2000,800],[1000,2400]])
+    tmp = mask
+    img = deepcopy(tmp)
+    points = []
+
+    (x_range,y_range)= np.shape(mask)
+    for i in range(x_range):
+        for j in range(y_range):
+            if mask[i][j] != 0:
+                points.append([i,j])
+
+    points_f=np.array(points)
+    print(points_f)
+    kmeans = KMeans(n_clusters=4, init = seeds_kmean, random_state=0).fit(points_f)
+    
+
+    labels = kmeans.labels_.ravel()
+
+
+    players = {new_list: [] for new_list in range(len(np.unique(labels)))}
+    #print(players)
+    for index in range(len(labels)):
+        players[labels[index]].append(points_f[index])
+        
+    centers=[]
+    for i in range (4):
+        center = np.mean(players[i],axis = 0)
+        print(center)
+        centers.append(np.mean(players[i],axis = 0))
+        plt.imshow(mask)
+        plt.scatter(points_f[:, 0], points_f[:, 1], c=kmeans.labels_.ravel(), s=10, lw=0, cmap='RdYlGn')
+        plt.scatter(center[0], center[1],s=10, lw=0, cmap='RdYlGn')
+    return players,centers
+
+ """  
+def find_corners(players,centers,image):
+    isolated_cards = []
+    left_lowers = []
+    #left_uppers = []
+    right_lowers = []
+    right_uppers = []
+    for i in range(4):
+        player = None
+        if centers[i][0] <= 1152 and centers[i][1] >= 1536 and centers[i][1] <= 3072:
+            player = 'player4'
+        if centers[i][0] >= 1152 and centers[i][0] <= 2304 and centers[i][1] >= 3072:
+            player = 'player1'
+        if centers[i][0] >= 2304 and centers[i][1] >= 1536 and centers[i][1] <= 3072:
+            player = 'player2'
+        if centers[i][0] >= 1152 and centers[i][0] <= 2304 and centers[i][1] <= 1536:
+            player = 'player3'
+        print("player:",player)
+
+        left_lower = []
+        left_upper = []
+        right_lower = []
+        right_upper = []
+
+        dist_max = 0
+ 
+        for coords in players[i]:
+            if dist_max<np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2) and (coords[0]<centers[i][0] and coords[1]> centers[i][1]): # left lower
+                dist_max = np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2)
+                left_lower = coords
+                
+       
+        dist_max = 0
+        for coords in players[i]:
+            if dist_max<np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2) and (coords[0]<centers[i][0] and coords[1]< centers[i][1]): # left upper
+                dist_max = np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2)
+                left_upper = coords
+                
+
+        dist_max = 0
+        for coords in players[i]:
+            if dist_max < np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2) and (coords[0]>centers[i][0] and coords[1]>centers[i][1]): # right lower
+                
+                dist_max = np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2)
+                right_lower = coords
+                
+                
+        dist_max = 0
+        for coords in players[i]:
+            if dist_max<np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2) and (coords[0]>centers[i][0] and coords[1]<centers[i][1]): # right upper
+                dist_max = np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2)
+                right_upper = coords
+        
+
+        left_lowers.append(left_lower)
+        #left_uppers.append()
+        right_lowers.append(right_lower)
+        right_uppers.append(right_upper)
+        
+        print("left lower:",left_lower)
+        print("left upper:",left_upper)
+        print("right lower:",right_lower)
+        print("right upper:",right_upper)
+
+        isolated = affin_transform(player,left_lower,right_lower,right_upper,image)
+        isolated_cards.append(isolated)
+
+    return isolated_cards,left_lowers,right_lowers,right_uppers
 
 def affin_transform(player,left_lower,right_lower,right_upper,image):
     input_pts = np.float32([left_lower,right_lower,right_upper])
@@ -188,13 +303,40 @@ for file in file_pics:
     image = read_image(file)
     image_dealer = mask_dealer(image)
     extracted = mask_for_extract_cards(image_dealer)
-    players,centers = players_clustering(extracted)
-    cards = find_corners(players,centers,image)
+    players,centers,points_f,labels = players_clustering(extracted)
+    cards,left_lowers,right_lowers,right_uppers = find_corners(players,centers,image)
 
+# plots for debug
+    c_x=[]
+    c_y=[]
+    for center in centers:
+        c_x.append(center[0])
+        c_y.append(center[1])
+
+    corner_x = []
+    corner_y = []
+    for i in range(4):
+        corner_x.append(left_lowers[i][0])
+        corner_x.append(right_lowers[i][0])
+        corner_x.append(right_uppers[i][0])
+        corner_y.append(left_lowers[i][1])
+        corner_y.append(right_lowers[i][1])
+        corner_y.append(right_uppers[i][1])
+        
+
+
+
+# resulting plots
     for i in range(1,5):
         plt.subplot(2,3,i)
         plt.imshow(cards[i-1])
 
     plt.subplot(2,3,5)
-    plt.imshow(image)
+    plt.scatter(c_x, c_y,s=10, lw=0, cmap='RdYlGn')
+    plt.imshow(extracted)
+
+    plt.subplot(2,3,6)
+    plt.scatter(points_f[:, 0], points_f[:, 1], c=labels, s=10, lw=0, cmap='RdYlGn')
+    plt.scatter(corner_x, corner_y,s=10, lw=0, cmap='RdYlGn')
+    plt.imshow(extracted)
     plt.show()
