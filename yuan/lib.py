@@ -214,7 +214,7 @@ def find_corners(players,centers,image):
             player = 'player2'
         if centers[i][0] >= 1152 and centers[i][0] <= 2304 and centers[i][1] <= 1536:
             player = 'player3'
-        print("player:",player)
+        #print("player:",player)
 
         left_lower = []
         left_upper = []
@@ -256,10 +256,10 @@ def find_corners(players,centers,image):
         right_lowers.append(right_lower)
         right_uppers.append(right_upper)
         
-        print("left lower:",left_lower)
-        print("left upper:",left_upper)
-        print("right lower:",right_lower)
-        print("right upper:",right_upper)
+        #print("left lower:",left_lower)
+        #print("left upper:",left_upper)
+        #print("right lower:",right_lower)
+        #print("right upper:",right_upper)
 
         isolated = affin_transform(player,left_lower,right_lower,right_upper,image)
         isolated_cards.append(isolated)
@@ -292,6 +292,10 @@ def walkFile(file):
             file_list.append(os.path.join(root, f))
 
     return file_list
+
+
+
+"""
 #####
 file_list = walkFile("train_games")
 file_pics=[]
@@ -322,10 +326,10 @@ for file in file_pics:
         corner_y.append(left_lowers[i][1])
         corner_y.append(right_lowers[i][1])
         corner_y.append(right_uppers[i][1])
-        
+"""       
 
 
-
+"""
 # resulting plots
     for i in range(1,5):
         plt.subplot(2,3,i)
@@ -340,3 +344,4 @@ for file in file_pics:
     plt.scatter(corner_x, corner_y,s=10, lw=0, cmap='RdYlGn')
     plt.imshow(extracted)
     plt.show()
+"""
