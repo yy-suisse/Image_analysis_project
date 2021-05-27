@@ -216,10 +216,10 @@ def find_corners(players,centers,image):
             player = 'player3'
         #print("player:",player)
 
-        left_lower = []
-        left_upper = []
-        right_lower = []
-        right_upper = []
+        left_lower = [-1,-1]
+        left_upper = [-1,-1]
+        right_lower = [-1,-1]
+        right_upper = [-1,-1]
 
         dist_max = 0
  
@@ -249,6 +249,19 @@ def find_corners(players,centers,image):
             if dist_max<np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2) and (coords[0]>centers[i][0] and coords[1]<centers[i][1]): # right upper
                 dist_max = np.sqrt((coords[0]-centers[i][0])**2+(coords[1]-centers[i][1])**2)
                 right_upper = coords
+                
+                
+        if right_lower[0] == -1:
+            right_lower[0] =  2 * int((right_upper[0] + left_lower[0]) / 2) - left_upper[0]
+            right_lower[1] =  2 * int((right_upper[1] + left_lower[1]) / 2) - left_upper[1]
+        
+        if left_lower[0] == -1:
+            left_lower[0] =  2 * int((left_upper[0] + right_lower[0]) / 2) - right_upper[0]
+            left_lower[1] =  2 * int((left_upper[1] + right_lower[1]) / 2) - right_upper[1]
+            
+        if right_upper[0] == -1:
+            right_upper[0] =  2 * int((left_upper[0] + right_lower[0]) / 2) - left_lower[0]
+            right_upper[1] =  2 * int((left_upper[1] + right_lower[1]) / 2) - left_lower[1]
         
 
         left_lowers.append(left_lower)
@@ -334,6 +347,8 @@ for file in file_pics:
     for i in range(1,5):
         plt.subplot(2,3,i)
         plt.imshow(cards[i-1])
+        cv2.imwrite(f'cards/{file[12:17]}_player{i}_{file[18:]}', cv2.cvtColor(cards[i-1], cv2.COLOR_RGB2BGR))  
+        
 
     plt.subplot(2,3,5)
     plt.scatter(c_x, c_y,s=10, lw=0, cmap='RdYlGn')
