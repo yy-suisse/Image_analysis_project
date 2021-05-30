@@ -1,4 +1,4 @@
-import lib
+import lib,card_segmentation
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage.interpolation import rotate
@@ -8,6 +8,7 @@ from skimage.color import rgb2gray
 import cv2
 from skimage.feature import match_template
 from collections import Counter
+from scipy import ndimage
 
 
 
@@ -20,6 +21,7 @@ def crop_suite (card):
     thresh = threshold_otsu(grayscale)
 
     binary = grayscale< thresh
+
 
     labels, _ = label(binary, return_num=True, connectivity=2)
     #print(labels[60,60])
@@ -68,12 +70,10 @@ def detect_color(xmin,xmax,ymin,ymax,card):
     
     color = None
 
-    if all(card[x_mean,y_mean]>[160,40,40]) and all(card[x_mean,y_mean]<[190,60,60]) :
-        #print("red")
+    if all(card[x_mean,y_mean]>=[140,20,20]) and all(card[x_mean,y_mean]<=[210,80,80]) :
         color = 'red'
 
-    if all(card[x_mean,y_mean]>[0,0,0]) and all(card[x_mean,y_mean]<[50,50,50]) :
-        #print("black")
+    if all(card[x_mean,y_mean]>[0,0,0]) and all(card[x_mean,y_mean]<[100,100,100]) :
         color = 'black'
     
     return color
@@ -112,7 +112,84 @@ def binary_transform(res):
 
     return binary
 
-######### creation of template
+def show_suites_for_all_players(file,template_dict):
+    
+    image = card_segmentation.read_image(file)
+    
+    
+    mask_t = card_segmentation.mask_thre(image)
+    image = card_segmentation.mask_dealer(image)
+    mask_r = card_segmentation.mask_range(image)
+    labeled_array, num_features = ndimage.label(mask_t, structure = np.ones((3,3)))
+    
+    for i in range(num_features):
+        if np.sum(mask_r[labeled_array == i+1]) < 255 * 600:
+            mask_t[labeled_array == i+1] = 0
+            
+    mask = np.uint8(mask_t)
+    
+    players,centers,points_f,labels = card_segmentation.players_clustering(mask)
+    cards,left_lowers,right_lowers,right_uppers = card_segmentation.find_corners(players,centers,image)
+
+
+    for i in range(4):
+        cropped_suite,xmin,xmax,ymin,ymax = crop_suite(cards[i])
+        
+        res = affin_transform_suites(cropped_suite,xmin,xmax,ymin,ymax) # affin transform with h=63, w=46
+        color = detect_color(xmin,xmax,ymin,ymax,cards[i])
+        bin_res = binary_transform(res)
+
+        best_score = 0.0
+        best_suite = None
+        
+        possible_suites = []
+        if color == 'red':
+            possible_suites = ['diamond', 'heart']
+        if color == 'black':
+            possible_suites = ['spade', 'club']
+        for j in possible_suites:
+            result = match_template(bin_res, template_dict[j])
+            result = abs(result)
+
+            if result > best_score:
+                best_score = result
+                best_suite = j
+        print("player: ", i+1)
+        print("matching suite: ", best_suite)
+        #plt.imshow(bin_res)
+    #plt.show()
+
+def load_template_suites(folder):
+    template_dict={}
+    template_list = card_segmentation.walkFile(folder)
+    for file in template_list:
+        if 'club' in file:
+            template_dict['club'] = binary_transform(card_segmentation.read_image(file))
+        if 'diamond' in file:
+            template_dict['diamond'] = binary_transform(card_segmentation.read_image(file))
+        if 'heart' in file:
+            template_dict['heart'] = binary_transform(card_segmentation.read_image(file))
+        if 'spade' in file:
+            template_dict['spade'] = binary_transform(card_segmentation.read_image(file))
+
+            
+    suite_tab = ['diamond','heart','club','spade']   
+    """  
+    for i in range(4):
+        plt.subplot(1,4,i+1)
+        plt.imshow(template_dict[suite_tab[i]])
+    plt.show()
+    """
+    return template_dict
+
+##################################
+"""
+template_dict = {}
+template_dict = load_template_suites()
+file ='train_games/game4/8.jpg'
+show_suites_for_all_players(file)
+"""
+
 """
 # 1. find a card for each suite
 suite_model_cards={} # store 4 cards 4 different suite
@@ -165,7 +242,7 @@ plt.show()
 
 
 template_dict={}
-template_list = lib.walkFile('yuan//templates')
+template_list = card_segmentation.walkFile('yuan//templates')
 for file in template_list:
     if 'club' in file:
         template_dict['club'] = binary_transform(lib.read_image(file))
@@ -184,16 +261,16 @@ for i in range(4):
 plt.show()
 
 
-file = "train_games/game4/8.jpg"
-image = lib.read_image(file)
-image_dealer = lib.mask_dealer(image)
+file = "train_games/game4/4.jpg"
+image = card_segmentation.read_image(file)
+image_dealer = card_segmentation.mask_dealer(image)
 plt.imshow(image_dealer)
 plt.show()
-extracted = lib.mask_for_extract_cards(image_dealer)
+extracted = card_segmentation.mask_for_extract_cards(image_dealer)
 plt.imshow(extracted)
 plt.show()
-players,centers,points_f,labels = lib.players_clustering(extracted)
-cards,left_lowers,right_lowers,right_uppers = lib.find_corners(players,centers,image)
+players,centers,points_f,labels = card_segmentation.players_clustering(extracted)
+cards,left_lowers,right_lowers,right_uppers = card_segmentation.find_corners(players,centers,image)
 #print(left_lowers,right_lowers,right_uppers)
 for i in range(4):
     plt.subplot(1,4,i+1)

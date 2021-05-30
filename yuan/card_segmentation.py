@@ -40,8 +40,11 @@ def mask_thre(img):
     image = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     
     mask = (1-cv2.adaptiveThreshold(image,1,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,101,5))
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))    
+
     mask = ndimage.binary_opening(mask, kernel, iterations=1) 
+
     #mask = ndimage.binary_closing(mask, kernel, iterations=1) 
     
     return mask
@@ -118,7 +121,7 @@ def find_corners(players,centers,image):
         if centers[i][0] >= 1152 and centers[i][0] <= 2304 and centers[i][1] <= 1536:
             player = 'player3'
         
-        print("player:",player)
+        #print("player:",player)
 
         left_lower = [-1,-1]
         left_upper = [-1,-1]
@@ -171,12 +174,12 @@ def find_corners(players,centers,image):
         #left_uppers.append()
         right_lowers.append(right_lower)
         right_uppers.append(right_upper)
-        
+        """
         print("left lower:",left_lower)
         print("left upper:",left_upper)
         print("right lower:",right_lower)
         print("right upper:",right_upper)
-        
+        """
         isolated = affin_transform(player,left_lower,right_lower,right_upper,image)
         isolated_cards.append(isolated)
 
@@ -224,8 +227,8 @@ def intensity_normalization(img):
     return np.float32(img_rgb)
 '''
 ###########################################################################
-    
-
+   
+"""
 file_list = walkFile("train_games")
 file_pics=[]
 print(file_list)
@@ -284,8 +287,8 @@ for file in file_pics:
     for i in range(1,5):
         plt.subplot(2,3,i)
         plt.imshow(cards[i-1])
-        cv2.imwrite(f'cards_latest/{file[12:17]}_player{i}_{file[18:]}', cv2.cvtColor(cards[i-1], cv2.COLOR_RGB2BGR))  
-        
+        #cv2.imwrite(f'cards_latest/{file[12:17]}_player{i}_{file[18:]}', cv2.cvtColor(cards[i-1], cv2.COLOR_RGB2BGR))  
+       
     plt.subplot(2,3,5)
     plt.scatter(c_x, c_y,s=10, lw=0, cmap='RdYlGn')
     plt.imshow(mask)
@@ -295,4 +298,4 @@ for file in file_pics:
     plt.scatter(corner_x, corner_y,s=10, lw=0, cmap='RdYlGn')
     plt.imshow(mask)
     plt.show()
-    
+"""
