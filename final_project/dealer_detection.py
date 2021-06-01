@@ -2,6 +2,14 @@ import cv2
 import numpy as np
 
 def mask_dealer(img):
+    """
+    This function allows us to find the position of dealer, it will also apply a mask to remove all the pixels in the dealer area
+    Args: 
+        img: the RGB image with 4 players and dealer
+    Return: 
+        img: the RGB image with 4 players, all the pixels belonging to the dealer are removed 
+        center: the coodinate of dealer's center 
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
     blurred = cv2.medianBlur(gray, 25) #cv2.bilateralFilter(gray,10,50,50)

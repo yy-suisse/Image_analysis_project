@@ -13,6 +13,19 @@ from scipy import ndimage
 import os
 
 def crop_suite (card):
+    """
+    This function receives one card, use the object labeling to find its suit location (upper left part of the card) and 
+    compute the region of suit
+    Args: 
+        card: one card isolated from the image 
+    Return: 
+        cropped_suite: the suit cropped from the card
+        xmin: the minimum value of coordinate on x for the suit on the current image
+        xmax: the maximum value of coordinate on x for the suit on the current image
+        ymin: the minimum value of coordinate on y for the suit on the current image
+        ymax: the maximum value of coordinate on y for the suit on the current image
+    """
+    
     card_copy=card.copy()
 
     grayscale = rgb2gray(card_copy)
@@ -58,6 +71,19 @@ def crop_suite (card):
 
 
 def detect_color(xmin,xmax,ymin,ymax,card):
+    """
+    This function receives one card and the range of coordinate on x and y for its upper left suit, then compute 
+    the color of this suit by looking at the color of the pixel in the middle of suit region
+    Args: 
+        xmin: the minimum value of coordinate on x for the suit on the current image
+        xmax: the maximum value of coordinate on x for the suit on the current image
+        ymin: the minimum value of coordinate on y for the suit on the current image
+        ymax: the maximum value of coordinate on y for the suit on the current image
+        card: one card isolated from the image 
+    Return: 
+        color: the color of the suit
+        
+    """
     x_mean = round((xmin+xmax)/2)
     y_mean = round((ymin+ymax)/2)
     
@@ -72,8 +98,22 @@ def detect_color(xmin,xmax,ymin,ymax,card):
     return color
 
 def affin_transform_suites(cropped_suite,xmin,xmax,ymin,ymax):
+    """
+    This function applys an affin transform on the cropped suit in order to make it fit into a certain size 
+    and orientation.
+    
+    Args: 
+        cropped_suite: the suit cropped from the card
+        xmin: the minimum value of coordinate on x for the suit on the current image
+        xmax: the maximum value of coordinate on x for the suit on the current image
+        ymin: the minimum value of coordinate on y for the suit on the current image
+        ymax: the maximum value of coordinate on y for the suit on the current image
+        
+    Return: 
+        res: the suit figure after the affin transformation (63*46 pixels)
+        
+    """
 
-    plt.show()
     height,width,_ = np.shape(cropped_suite)
 
     input_pts = np.float32([[0,0],[width,height],[0,height]])
@@ -88,6 +128,13 @@ def affin_transform_suites(cropped_suite,xmin,xmax,ymin,ymax):
     return res
 
 def binary_transform(res):
+    """
+    This function convert a RGB image into a binary image by using grayscale and thresholding method
+    Args:
+        res: a RGB image
+    Return:
+        binary: a bnary image
+    """
     grayscale = rgb2gray(res)
 
     thresh = threshold_otsu(grayscale)
@@ -97,6 +144,17 @@ def binary_transform(res):
     return binary
 
 def show_suites_for_all_players(cards,template_dict):
+    """
+    This function receives four cards of one image, preprocess to isolate the suits for four cards, then apply the 
+    template matching method between the suits isolated from the cards and the suit models in the template_dict
+    to classify the suits
+    Arg:
+        cards: four cards (with same size and good orientation) extracted from one image
+        template_dict: a list containing four suit models, one for each
+        
+    Return: 
+        suites: a list containing the best fitted suits for all four cards
+    """
     
     suites = []
 
@@ -129,6 +187,14 @@ def show_suites_for_all_players(cards,template_dict):
         
 
 def load_template_suites(folder):
+    """
+    This function accesses to the folder and read four suit templates 
+    Arg:
+        folder: path of folder which stores the four suit template models
+        
+    Return: 
+        template_dict: a dictionary which store all the four template models
+    """
     template_dict={}
     template_list = cards_segmentation.walkFile(folder)
     for file in template_list:
