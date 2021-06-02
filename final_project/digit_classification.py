@@ -21,6 +21,14 @@ from sklearn.svm import SVC
 from sklearn.ensemble import BaggingClassifier
 
 def generate_ordered_cgt_mask(cgt_rank):
+    """
+    This function generated ordered number including jqk of cards(game,player,round) and masks that indicates whether the central symbol is number or jqk 
+    Args: 
+        cgt_rank: suites and central symbols extracted from each game
+    Return: 
+        cgt_order: ordered array of central symbols in one game
+        cgt_mask_order: 0&1 array that indicates whether the central symbol is number or jqk
+    """
     card_dict={'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'J':10,'Q':11,'K':12}
     num_dict={'0':1,'1':1,'2':1,'3':1,'4':1,'5':1,'6':1,'7':1,'8':1,'9':1,'J':0,'Q':0,'K':0}
     cgt_number=np.zeros((13,4), dtype=int)
@@ -40,14 +48,35 @@ def generate_ordered_cgt_mask(cgt_rank):
     return cgt_order, cgt_mask_order
 
 def zerolistmaker(n):
+    """
+    This function generated full zeros list
+    Args: 
+        n: integer that is length of list
+    Return: 
+        listofzeros: list full of zeros
+    """
     listofzeros = [0] * n
     return listofzeros
 
 
 def rgb2gray(rgb):
+    """
+    This function converts rgb images into grayscale images
+    Args: 
+        rgb: rgb images
+    Return: 
+        image: grayscale images
+    """
     return np.dot(rgb[...,:3], [0.2989, 0.5870, 0.1140]) 
 
 def sorter(item):
+    """
+    This function defines sorter to facilitate sorting of extracted central symbols.
+    Args: 
+        item: name of extracted central symbols.
+    Return: 
+        tuple: sorting order of game, player and round.
+    """
     order_dict={'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'11':11,'12':12,'13':13}
     g_p_l=item.split('_')
     game =g_p_l[0] 
@@ -57,6 +86,15 @@ def sorter(item):
     return (game, player,order_dict[loop_n[0]])
 
 def extract_data(filename, image_shape, image_number):
+    """
+    This function extracts images from MNIST dataset of certain number.
+    Args: 
+        filename: path of dataset
+        image_shape: 28*28 images
+        image_number: number of extracted images
+    Return: 
+        data: (image_number,image_shape) array
+    """
     with gzip.open(filename) as bytestream:
         bytestream.read(16)
         buf = bytestream.read(np.prod(image_shape) * image_number)
@@ -66,6 +104,14 @@ def extract_data(filename, image_shape, image_number):
 
 
 def extract_labels(filename, image_number):
+    """
+    This function extracts corresponding labels of images from MNIST dataset of certain number.
+    Args: 
+        filename: path of dataset
+        image_number: number of extracted images
+    Return: 
+        data: (image_number) array
+    """
     with gzip.open(filename) as bytestream:
         bytestream.read(8)
         buf = bytestream.read(1 * image_number)
@@ -73,6 +119,15 @@ def extract_labels(filename, image_number):
     return labels
 
 def NN_for_classification(x_train, y_train):
+    """
+    This function generates two neural network for classification tasks, one is MLPs and the other MLPs with bagging as ensemble learning
+    Args: 
+        x_train: input of neural networks for training
+        y_train: labels of input for training
+    Return: 
+        MLP_clf: MLPs networks for classification
+        Ensemble_clf: MLPs with bagging as ensemble learning for classification
+    """
     #input the train data/label, test data/label, output MLP NN and ensemble NN
     MLP_clf = MLPClassifier(hidden_layer_sizes=250)
     Ensemble_clf= BaggingClassifier(base_estimator=SVC(),n_estimators=10, random_state=0)
@@ -82,6 +137,13 @@ def NN_for_classification(x_train, y_train):
     return MLP_clf, Ensemble_clf
 
 def digit_extract(card):
+    """
+    This function transform extracted central cards into images that can be used as training samples
+    Args: 
+        card: extracted images of central cards
+    Return: 
+        th_im: processed images(rgb to grayscale, crop and interpolation, binary images with adaptive threshold)
+    """
     gray_card = rgb2gray(card)
     card_crop_gray = cv.resize(gray_card[110:290,70:250], (28, 28),interpolation=cv.INTER_AREA)
     card_crop_gray = card_crop_gray.astype(np.uint8)
@@ -91,6 +153,14 @@ def digit_extract(card):
     return th_im
 
 def preprocessing_for_cards():
+    """
+    This function process the extracted central cards and and symbols and generate two training sets(one for digits classification, the other for classification of all symbols)
+    Args: 
+        None
+    Return: 
+        (x_train_0, y_train_0): training set for digits classification
+        (x_train_1, y_train_1): training set for classification of all card central symbols 
+    """
     card_dict={'0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'J':10,'Q':11,'K':12}
     order_dict={'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'11':11,'12':12,'13':13}
     num_dict={'0':1,'1':1,'2':1,'3':1,'4':1,'5':1,'6':1,'7':1,'8':1,'9':1,'J':0,'Q':0,'K':0}
@@ -113,8 +183,8 @@ def preprocessing_for_cards():
     ######
     label_card_jqk=label_card.copy() ## the first 6 games label with jqk
     mask_card_jqk=mask_card.copy()  ## the mask of the first 6 games label with jqk
-    label_card_test_jqk=label_card_test.copy() # the last gae
-    mask_card_test_jqk=mask_card_test.copy()
+    label_card_test_jqk=label_card_test.copy() # the last game label with jqk
+    mask_card_test_jqk=mask_card_test.copy()# the last game mask label with jqk
     ######
 
     for i in range(13*4*6):
@@ -190,7 +260,7 @@ def preprocessing_for_cards():
     train_labels = extract_labels(train_labels_path, train_set_size)
     test_labels = extract_labels(test_labels_path, test_set_size)
 ##generate two tuples for digit classification and jqk plus digits classification
-    x_train_0=np.concatenate((train_images,train_card_digit),axis=0)
+    x_train_0=np.concatenate((train_images,train_card_digit),axis=0) # mix the data from MNIST with extracted and processed digits from cards
     size_train_0 = x_train_0.shape[0]
     x_train_0= np.reshape(x_train_0, [size_train_0, 784])
     y_train_0=np.concatenate((train_labels,label_card),axis=0)
